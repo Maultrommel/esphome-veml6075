@@ -1,0 +1,10 @@
+veml6075_sensor:
+  integration_time: 200ms
+  mode: active
+
+  uv_index:
+    name: "UV Index"
+  uva:
+    name: "UVA Raw"
+  uvb:
+    name: "UVB Raw"
