@@ -1,0 +1,76 @@
+#include "veml6075_sensor.h"
+#include "esphome/core/log.h"
+
+namespace esphome {
+namespace veml6075_sensor {
+
+static const char *const TAG = "veml6075";
+
+#define VEML6075_ADDR 0x10
+
+#define REG_CONF 0x00
+#define REG_UVA 0x07
+#define REG_UVB 0x09
+#define REG_UVCOMP1 0x0A
+#define REG_UVCOMP2 0x0B
+
+void VEML6075Sensor::setup() {
+  configure_sensor_();
+}
+
+void VEML6075Sensor::configure_sensor_() {
+  uint16_t config = 0x00;
+  config |= (integration_time_ << 4);  // bits 6:4 = IT
+  if (mode_ == MODE_FORCED) {
+    config |= (1 << 0);  // SD = 1 (shut down until triggered)
+  }
+  this->write_u16_(REG_CONF, config);
+}
+
+void VEML6075Sensor::update() {
+  if (mode_ == MODE_FORCED) {
+    this->write_u16_(REG_CONF, (integration_time_ << 4));  // trigger
+    delay(120);  // wait for integration
+  }
+
+  uint16_t uva = read_u16_(REG_UVA);
+  uint16_t uvb = read_u16_(REG_UVB);
+  uint16_t uvcomp1 = read_u16_(REG_UVCOMP1);
+  uint16_t uvcomp2 = read_u16_(REG_UVCOMP2);
+
+  float comp_uva = get_comp_uva_(uva, uvcomp1, uvcomp2);
+  float comp_uvb = get_comp_uvb_(uvb, uvcomp1, uvcomp2);
+  float uvi = calculate_uvi_(comp_uva, comp_uvb);
+
+  if (uv_index_sensor_) uv_index_sensor_->publish_state(uvi);
+  if (uva_sensor_) uva_sensor_->publish_state(uva);
+  if (uvb_sensor_) uvb_sensor_->publish_state(uvb);
+  if (uvcomp1_sensor_) uvcomp1_sensor_->publish_state(uvcomp1);
+  if (uvcomp2_sensor_) uvcomp2_sensor_->publish_state(uvcomp2);
+}
+
+uint16_t VEML6075Sensor::read_u16_(uint8_t reg) {
+  uint8_t buffer[2];
+  this->read_bytes(reg, buffer, 2);
+  return (uint16_t(buffer[1]) << 8) | buffer[0];
+}
+
+void VEML6075Sensor::write_u16_(uint8_t reg, uint16_t value) {
+  uint8_t buffer[2] = {uint8_t(value & 0xFF), uint8_t((value >> 8) & 0xFF)};
+  this->write_bytes(reg, buffer, 2);
+}
+
+float VEML6075Sensor::get_comp_uva_(uint16_t uva, uint16_t uvcomp1, uint16_t uvcomp2) {
+  return float(uva) - (2.22f * uvcomp1) - (1.33f * uvcomp2);
+}
+
+float VEML6075Sensor::get_comp_uvb_(uint16_t uvb, uint16_t uvcomp1, uint16_t uvcomp2) {
+  return float(uvb) - (2.95f * uvcomp1) - (1.74f * uvcomp2);
+}
+
+float VEML6075Sensor::calculate_uvi_(float comp_uva, float comp_uvb) {
+  return (comp_uva + comp_uvb) / 2.0f * 0.0011f;
+}
+
+}  // namespace veml6075_sensor
+}  // namespace esphome
