@@ -6,19 +6,19 @@ from esphome.components import sensor
 # Define the namespace for the component
 veml6075_ns = cg.esphome_ns.namespace("veml6075_sensor")
 
-# Define the schema for the configuration
+# Define a simpler schema
 CONFIG_SCHEMA = vol.Schema({
     cv.GenerateID(): cv.declare_id(veml6075_ns.Veml6075Sensor),
     vol.Optional("integration_time", default="200ms"): vol.In(["200ms", "400ms", "800ms"]),
     vol.Optional("mode", default="active"): vol.In(["active", "forced"]),
-    vol.Optional("uv_index", default={}): sensor.sensor_schema,
-    vol.Optional("uva", default={}): sensor.sensor_schema,
-    vol.Optional("uvb", default={}): sensor.sensor_schema,
-    vol.Optional("uvcomp1", default={}): sensor.sensor_schema,
-    vol.Optional("uvcomp2", default={}): sensor.sensor_schema,
+    vol.Optional("uv_index"): sensor.sensor_schema,
+    vol.Optional("uva"): sensor.sensor_schema,
+    vol.Optional("uvb"): sensor.sensor_schema,
+    vol.Optional("uvcomp1"): sensor.sensor_schema,
+    vol.Optional("uvcomp2"): sensor.sensor_schema,
 }, extra=vol.ALLOW_EXTRA)
 
-# Register the component with ESPHome
+# Component setup
 def setup(veml6075_sensor, config):
     # Assign the configuration to the sensor
     veml6075_sensor.integration_time = config["integration_time"]
