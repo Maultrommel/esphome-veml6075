@@ -16,7 +16,7 @@ CONFIG_SCHEMA = vol.Schema({
     vol.Optional("uvb", default={}): sensor.sensor_schema,
     vol.Optional("uvcomp1", default={}): sensor.sensor_schema,
     vol.Optional("uvcomp2", default={}): sensor.sensor_schema,
-})
+}, extra=vol.ALLOW_EXTRA)
 
 # Register the component with ESPHome
 def setup(veml6075_sensor, config):
