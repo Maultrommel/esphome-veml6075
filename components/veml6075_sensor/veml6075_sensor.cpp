@@ -6,10 +6,16 @@ namespace veml6075_sensor {
 
 static const char *const TAG = "veml6075";
 
+#define REG_CONF    0x00
+#define REG_UVA     0x07
+#define REG_UVB     0x09
+#define REG_UVCOMP1 0x0A
+#define REG_UVCOMP2 0x0B
+
+
 // REG_CONF bit masks and shifts (from SparkFun library)
 #define VEML6075_UV_IT_MASK     0x70  // bits 6:4
 #define VEML6075_UV_IT_SHIFT    4
-
 #define VEML6075_HD_MASK        0x08  // bit 3
 #define VEML6075_TRIG_MASK      0x04  // bit 2
 #define VEML6075_AF_MASK        0x02  // bit 1
