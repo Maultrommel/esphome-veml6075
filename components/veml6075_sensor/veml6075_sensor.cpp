@@ -22,10 +22,12 @@ void VEML6075Sensor::setup() {
   // Read back config for confirmation
   uint16_t readback = this->read_u16_(REG_CONF);
   ESP_LOGI(TAG, "Config register readback: 0x%04X", readback);
+
 }
 
 void VEML6075Sensor::update() {
-  delay(150);  // ensure full integration time passed (100ms + margin)
+  delay(150);  // integration time
+  delay(20);   // ensure previous write settles
 
   uint16_t uva = read_u16_(REG_UVA);
   uint16_t uvb = read_u16_(REG_UVB);
@@ -56,14 +58,7 @@ void VEML6075Sensor::update() {
 uint16_t VEML6075Sensor::read_u16_(uint8_t reg) {
   uint8_t buffer[2] = {0x00, 0x00};
 
-  // First write the register address
-  if (!this->write(reinterpret_cast<const uint8_t *>(&reg), 1)) {
-    ESP_LOGE(TAG, "Failed to write register address 0x%02X", reg);
-    return 0;
-  }
-
-  // Then read two bytes from that register
-  if (!this->read(buffer, 2)) {
+  if (!this->read_bytes(reg, buffer, 2)) {
     ESP_LOGE(TAG, "Failed to read register 0x%02X", reg);
     return 0;
   }
