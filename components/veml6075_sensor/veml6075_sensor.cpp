@@ -58,4 +58,24 @@ uint16_t VEML6075Sensor::read_u16_(uint8_t reg) {
   return (uint16_t(buffer[1]) << 8) | buffer[0];
 }
 
-void VEML6075Sensor::write_u16_(uint8_t reg_
+void VEML6075Sensor::write_u16_(uint8_t reg, uint16_t value) {
+  uint8_t buffer[2];
+  buffer[0] = value & 0xFF;        // LSB
+  buffer[1] = (value >> 8) & 0xFF; // MSB
+  this->write_bytes(reg, buffer, 2);
+}
+
+float VEML6075Sensor::get_comp_uva_(uint16_t uva, uint16_t uvcomp1, uint16_t uvcomp2) {
+  return float(uva) - (2.22f * uvcomp1) - (1.33f * uvcomp2);
+}
+
+float VEML6075Sensor::get_comp_uvb_(uint16_t uvb, uint16_t uvcomp1, uint16_t uvcomp2) {
+  return float(uvb) - (2.95f * uvcomp1) - (1.74f * uvcomp2);
+}
+
+float VEML6075Sensor::calculate_uvi_(float comp_uva, float comp_uvb) {
+  return (comp_uva + comp_uvb) / 2.0f * 0.0011f;
+}
+
+}  // namespace veml6075_sensor
+}  // namespace esphome
