@@ -58,7 +58,7 @@ CONFIG_SCHEMA = cv.Schema(
 ).extend(cv.COMPONENT_SCHEMA).extend(i2c.i2c_device_schema(0x10))
 
 async def to_code(config):
-    var = cg.new_veml6075_sensor.VEML6075SensorComponent(config[CONF_ID])
+    var = cg.new_component(VEML6075SensorComponent, config)
 
     cg.add(var.set_integration_time(config[CONF_INTEGRATION_TIME]))
     cg.add(var.set_mode(config[CONF_MODE]))
@@ -82,4 +82,5 @@ async def to_code(config):
     if CONF_UVCOMP2 in config:
         sens = await sensor.new_sensor(config[CONF_UVCOMP2])
         cg.add(var.set_uvcomp2_sensor(sens))
+
 
