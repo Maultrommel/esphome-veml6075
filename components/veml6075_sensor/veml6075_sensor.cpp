@@ -6,32 +6,36 @@ namespace veml6075_sensor {
 
 static const char *const TAG = "veml6075";
 
-#define REG_CONF 0x00
-#define REG_UVA 0x07
-#define REG_UVB 0x09
-#define REG_UVCOMP1 0x0A
-#define REG_UVCOMP2 0x0B
+// REG_CONF bit masks and shifts (from SparkFun library)
+#define VEML6075_UV_IT_MASK     0x70  // bits 6:4
+#define VEML6075_UV_IT_SHIFT    4
+
+#define VEML6075_HD_MASK        0x08  // bit 3
+#define VEML6075_TRIG_MASK      0x04  // bit 2
+#define VEML6075_AF_MASK        0x02  // bit 1
+#define VEML6075_SHUTDOWN_MASK  0x01  // bit 0
+
 
 void VEML6075Sensor::setup() {
-  // Apply config once at startup
-  uint16_t config = (integration_time_ << 4);  // bits 6:4
-  
-  if (high_dynamic_) {
-    config |= (1 << 3);  // HD
-  }
-  
-  if (mode_ == MODE_FORCED) {
-    config |= (1 << 2);  // UV_AF
-    config |= (1 << 1);  // TRIG
-    config |= (1 << 0);  // SD = 1 (shutdown required for forced mode)
-  } else {
-    if (shutdown_) {
-      config |= (1 << 0);  // SD
-    }
-  }
-  
-  this->write_u16_(REG_CONF, config);
+  // Start with a clean config
+  uint16_t config = 0x00;
 
+  // Integration time (bits 6:4)
+  config |= ((integration_time_ << VEML6075_UV_IT_SHIFT) & VEML6075_UV_IT_MASK);
+
+  if (high_dynamic_)
+    config |= VEML6075_HD_MASK;
+
+  if (mode_ == MODE_FORCED) {
+    config |= VEML6075_AF_MASK;       // Set forced mode
+    config |= VEML6075_TRIG_MASK;     // Trigger measurement
+    config |= VEML6075_SHUTDOWN_MASK; // Must be in shutdown for forced mode
+  } else {
+    if (shutdown_)
+      config |= VEML6075_SHUTDOWN_MASK;
+  }
+
+  this->write_u16_(REG_CONF, config);
   delay(100);
 
   uint16_t readback = this->read_u16_(REG_CONF);
@@ -39,32 +43,32 @@ void VEML6075Sensor::setup() {
 }
 
 void VEML6075Sensor::update() {
-  // Reapply config in case sensor resets itself
-  uint16_t config = (integration_time_ << 4);  // bits 6:4
-  
-  if (high_dynamic_) {
-    config |= (1 << 3);  // HD
-  }
-  
-  if (mode_ == MODE_FORCED) {
-    config |= (1 << 2);  // UV_AF
-    config |= (1 << 1);  // TRIG
-    config |= (1 << 0);  // SD = 1 (shutdown required for forced mode)
-  } else {
-    if (shutdown_) {
-      config |= (1 << 0);  // SD
-    }
-  }
-  
-  this->write_u16_(REG_CONF, config);
+  // Always reapply config to keep sensor alive and clean
+  uint16_t config = 0x00;
 
+  config |= ((integration_time_ << VEML6075_UV_IT_SHIFT) & VEML6075_UV_IT_MASK);
+
+  if (high_dynamic_)
+    config |= VEML6075_HD_MASK;
+
+  if (mode_ == MODE_FORCED) {
+    config |= VEML6075_AF_MASK;
+    config |= VEML6075_TRIG_MASK;
+    config |= VEML6075_SHUTDOWN_MASK;
+  } else {
+    if (shutdown_)
+      config |= VEML6075_SHUTDOWN_MASK;
+  }
+
+  this->write_u16_(REG_CONF, config);
   delay(20);
 
   uint16_t conf = this->read_u16_(REG_CONF);
   ESP_LOGD(TAG, "CONF reg during update: 0x%04X", conf);
 
-  delay(220);  // Allow full integration
+  delay(220);  // Integration delay
 
+  // Read all UV data
   uint16_t uva = read_u16_(REG_UVA);
   uint16_t uvb = read_u16_(REG_UVB);
   uint16_t uvcomp1 = read_u16_(REG_UVCOMP1);
