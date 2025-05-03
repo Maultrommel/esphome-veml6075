@@ -36,6 +36,7 @@ void VEML6075Sensor::configure_sensor_() {
 }
 
 void VEML6075Sensor::update() {
+delay(100);  // let sensor fully settle  
 if (mode_ == MODE_FORCED) {
   uint16_t config = 0x00;
   config |= (integration_time_ << 4);
