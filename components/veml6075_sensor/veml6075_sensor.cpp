@@ -73,9 +73,11 @@ float VEML6075Sensor::get_comp_uvb_(uint16_t uvb, uint16_t uvcomp1, uint16_t uvc
   return float(uvb) - (2.95f * uvcomp1) - (1.74f * uvcomp2);
 }
 
-float VEML6075Sensor::calculate_uvi_(float comp_uva, float comp_uvb) {
-  return (comp_uva + comp_uvb) / 2.0f * 0.0011f;
+float calculate_uvi_(float comp_uva, float comp_uvb) {
+  float raw = (comp_uva + comp_uvb) / 2.0f * 0.0011f;
+  return raw < 0.0f ? 0.0f : raw;
 }
+
 
 }  // namespace veml6075_sensor
 }  // namespace esphome
