@@ -14,9 +14,24 @@ static const char *const TAG = "veml6075";
 
 void VEML6075Sensor::setup() {
   // Apply config once at startup
-  uint16_t config = (0b010 << 4);  // IT = 200ms
-  config &= ~(1 << 0);             // SD = 0 (power on)
+  uint16_t config = (integration_time_ << 4);  // bits 6:4
+  
+  if (high_dynamic_) {
+    config |= (1 << 3);  // HD
+  }
+  
+  if (mode_ == MODE_FORCED) {
+    config |= (1 << 2);  // UV_AF
+    config |= (1 << 1);  // TRIG
+    config |= (1 << 0);  // SD = 1 (shutdown required for forced mode)
+  } else {
+    if (shutdown_) {
+      config |= (1 << 0);  // SD
+    }
+  }
+  
   this->write_u16_(REG_CONF, config);
+
   delay(100);
 
   uint16_t readback = this->read_u16_(REG_CONF);
@@ -25,9 +40,24 @@ void VEML6075Sensor::setup() {
 
 void VEML6075Sensor::update() {
   // Reapply config in case sensor resets itself
-  uint16_t config = (0b010 << 4);  // IT = 200ms
-  config &= ~(1 << 0);             // SD = 0
+  uint16_t config = (integration_time_ << 4);  // bits 6:4
+  
+  if (high_dynamic_) {
+    config |= (1 << 3);  // HD
+  }
+  
+  if (mode_ == MODE_FORCED) {
+    config |= (1 << 2);  // UV_AF
+    config |= (1 << 1);  // TRIG
+    config |= (1 << 0);  // SD = 1 (shutdown required for forced mode)
+  } else {
+    if (shutdown_) {
+      config |= (1 << 0);  // SD
+    }
+  }
+  
   this->write_u16_(REG_CONF, config);
+
   delay(20);
 
   uint16_t conf = this->read_u16_(REG_CONF);
