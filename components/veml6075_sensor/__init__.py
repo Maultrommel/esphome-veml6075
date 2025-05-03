@@ -58,7 +58,9 @@ CONFIG_SCHEMA = cv.Schema(
 ).extend(cv.COMPONENT_SCHEMA).extend(i2c.i2c_device_schema(0x10))
 
 async def to_code(config):
-    var = cg.new_component(VEML6075SensorComponent, config)
+    var = cg.new_Pvariable(config[CONF_ID])
+    await cg.register_component(var, config)
+    await i2c.register_i2c_device(var, config)
 
     cg.add(var.set_integration_time(config[CONF_INTEGRATION_TIME]))
     cg.add(var.set_mode(config[CONF_MODE]))
