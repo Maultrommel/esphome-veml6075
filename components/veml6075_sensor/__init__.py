@@ -3,7 +3,7 @@ from esphome import automation
 from esphome.const import (
     CONF_ID,
     STATE_CLASS_MEASUREMENT,
-    UNIT_UV_INDEX,
+    UNIT_EMPTY,
 )
 from esphome.components import i2c, sensor
 from esphome.components.sensor import Sensor
@@ -35,7 +35,7 @@ CONFIG_SCHEMA = cv.Schema(
             "normal", "active", lower=True
         ),
         cv.Optional(CONF_UV_INDEX): sensor.sensor_schema(
-            unit_of_measurement=UNIT_UV_INDEX,
+            unit_of_measurement=UNIT_EMPTY,
             state_class=STATE_CLASS_MEASUREMENT,
         ),
         cv.Optional(CONF_UVA): sensor.sensor_schema(
