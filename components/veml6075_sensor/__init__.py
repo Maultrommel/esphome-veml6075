@@ -40,7 +40,6 @@ CONFIG_SCHEMA = cv.Schema({
     cv.Optional(CONF_INTEGRATION_TIME, default="100ms"): cv.enum(INTEGRATION_TIMES, upper=False),
     cv.Optional(CONF_MODE, default="active"): cv.enum(MODES, upper=False),
     cv.Optional("shutdown", default=False): cv.boolean,
-    cv.Optional("force_mode", default=False): cv.boolean,
     cv.Optional("high_dynamic", default=False): cv.boolean,
     cv.Optional(CONF_UV_INDEX): sensor.sensor_schema(
         unit_of_measurement="UV Index",
@@ -77,7 +76,6 @@ async def to_code(config):
     cg.add(var.set_integration_time(config[CONF_INTEGRATION_TIME]))
     cg.add(var.set_mode(config[CONF_MODE]))
     cg.add(var.set_shutdown(config["shutdown"]))
-    cg.add(var.set_force_mode(config["force_mode"]))
     cg.add(var.set_high_dynamic(config["high_dynamic"]))
 
     if CONF_UV_INDEX in config:
