@@ -49,6 +49,11 @@ if (mode_ == MODE_FORCED) {
   uint16_t uvcomp1 = read_u16_(REG_UVCOMP1);
   uint16_t uvcomp2 = read_u16_(REG_UVCOMP2);
 
+  ESP_LOGD(TAG, "Raw UVA: %u", uva);
+ESP_LOGD(TAG, "Raw UVB: %u", uvb);
+ESP_LOGD(TAG, "UVCOMP1: %u", uvcomp1);
+ESP_LOGD(TAG, "UVCOMP2: %u", uvcomp2);
+
   float comp_uva = get_comp_uva_(uva, uvcomp1, uvcomp2);
   float comp_uvb = get_comp_uvb_(uvb, uvcomp1, uvcomp2);
   float uvi = calculate_uvi_(comp_uva, comp_uvb);
