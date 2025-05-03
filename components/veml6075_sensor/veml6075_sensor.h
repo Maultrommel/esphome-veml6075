@@ -44,6 +44,15 @@ class VEML6075Sensor : public PollingComponent, public i2c::I2CDevice {
   float get_comp_uva_(uint16_t uva, uint16_t uvcomp1, uint16_t uvcomp2);
   float get_comp_uvb_(uint16_t uvb, uint16_t uvcomp1, uint16_t uvcomp2);
 
+  unsigned long last_read_time_{0};     // For timing reads
+  float last_uva_{0}, last_uvb_{0};     // Cached last values
+  float last_index_{0};                 // Cached UV index
+  
+  static constexpr float uva_a_coef = 2.22f;
+  static constexpr float uva_b_coef = 1.33f;
+  static constexpr float uvb_c_coef = 2.95f;
+  static constexpr float uvb_d_coef = 1.75f;
+
   VEML6075IntegrationTime integration_time_ = IT_100MS;
   VEML6075Mode mode_ = MODE_ACTIVE;
   bool shutdown_{false};
