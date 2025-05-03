@@ -39,7 +39,12 @@ void VEML6075Sensor::update() {
 
   float comp_uva = get_comp_uva_(uva, uvcomp1, uvcomp2);
   float comp_uvb = get_comp_uvb_(uvb, uvcomp1, uvcomp2);
+  ESP_LOGD(TAG, "Compensated UVA: %.2f", comp_uva);
+  ESP_LOGD(TAG, "Compensated UVB: %.2f", comp_uvb);
+
   float uvi = calculate_uvi_(comp_uva, comp_uvb);
+  if (uvi < 0.0f)
+    uvi = 0.0f;
 
   if (uv_index_sensor_) uv_index_sensor_->publish_state(uvi);
   if (uva_sensor_) uva_sensor_->publish_state(uva);
@@ -73,11 +78,9 @@ float VEML6075Sensor::get_comp_uvb_(uint16_t uvb, uint16_t uvcomp1, uint16_t uvc
   return float(uvb) - (2.95f * uvcomp1) - (1.74f * uvcomp2);
 }
 
-float calculate_uvi_(float comp_uva, float comp_uvb) {
-  float raw = (comp_uva + comp_uvb) / 2.0f * 0.0011f;
-  return raw < 0.0f ? 0.0f : raw;
+float VEML6075Sensor::calculate_uvi_(float comp_uva, float comp_uvb) {
+  return (comp_uva + comp_uvb) / 2.0f * 0.0011f;
 }
-
 
 }  // namespace veml6075_sensor
 }  // namespace esphome
