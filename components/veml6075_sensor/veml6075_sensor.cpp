@@ -32,8 +32,10 @@ void VEML6075Sensor::setup() {
 }
 
 void VEML6075Sensor::update() {
-  delay(150);  // integration time
-  delay(20);   // ensure previous write settles
+  uint16_t conf = this->read_u16_(REG_CONF);
+  ESP_LOGI(TAG, "Update: Config register = 0x%04X", conf);
+
+  delay(150);  // allow for integration period
 
   uint16_t uva = read_u16_(REG_UVA);
   uint16_t uvb = read_u16_(REG_UVB);
@@ -51,8 +53,7 @@ void VEML6075Sensor::update() {
   ESP_LOGD(TAG, "Compensated UVB: %.2f", comp_uvb);
 
   float uvi = calculate_uvi_(comp_uva, comp_uvb);
-  if (uvi < 0.0f)
-    uvi = 0.0f;
+  if (uvi < 0.0f) uvi = 0.0f;
 
   if (uv_index_sensor_) uv_index_sensor_->publish_state(uvi);
   if (uva_sensor_) uva_sensor_->publish_state(uva);
@@ -60,6 +61,7 @@ void VEML6075Sensor::update() {
   if (uvcomp1_sensor_) uvcomp1_sensor_->publish_state(uvcomp1);
   if (uvcomp2_sensor_) uvcomp2_sensor_->publish_state(uvcomp2);
 }
+
 
 uint16_t VEML6075Sensor::read_u16_(uint8_t reg) {
   uint8_t buffer[2] = {0x00, 0x00};
