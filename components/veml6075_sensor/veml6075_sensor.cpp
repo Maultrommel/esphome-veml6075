@@ -23,6 +23,7 @@ void VEML6075Sensor::setup() {
   uint16_t readback = this->read_u16_(REG_CONF);
   ESP_LOGI(TAG, "Config register readback: 0x%04X", readback);
 
+  ESP_LOGI(TAG, "Setup complete");
 }
 
 void VEML6075Sensor::update() {
