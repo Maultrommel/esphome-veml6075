@@ -3,7 +3,6 @@ import esphome.config_validation as cv
 from esphome.components import i2c, sensor
 from esphome.const import (
     CONF_ID,
-    DEVICE_CLASS_ULTRAVIOLET_INDEX,
     STATE_CLASS_MEASUREMENT,
     UNIT_UV_INDEX,
 )
@@ -39,10 +38,6 @@ async def to_code(config):
 
     comp.set_integration_time(config["integration_time"])
     comp.set_mode(config["mode"])
-
-    if "uv_index" in config:
-        sens = await sensor.new_sensor(config["uv_index"])
-        cg.add(comp.set_uv_index_sensor(sens))
 
     if "uva" in config:
         sens = await sensor.new_sensor(config["uva"])
