@@ -13,39 +13,40 @@ static const char *const TAG = "veml6075";
 #define REG_UVCOMP2 0x0B
 
 void VEML6075Sensor::setup() {
-  // Set integration time to 100ms, SD = 0 (power on)
-  uint16_t config = (0b001 << 4);  // IT[6:4] = 001 => 100ms
-  config &= ~(1 << 0);             // SD = 0 => power on
+  // Apply config once at startup
+  uint16_t config = (0b010 << 4);  // IT = 200ms
+  config &= ~(1 << 0);             // SD = 0 (power on)
   this->write_u16_(REG_CONF, config);
-  delay(100);  // wait for sensor to wake
+  delay(100);
 
-  // Read back config for confirmation
   uint16_t readback = this->read_u16_(REG_CONF);
-  ESP_LOGI(TAG, "Config register readback: 0x%04X", readback);
-
-  ESP_LOGI(TAG, "Setup complete");
+  ESP_LOGI(TAG, "Setup complete, CONF reg = 0x%04X", readback);
 }
 
 void VEML6075Sensor::update() {
-  uint16_t conf = this->read_u16_(REG_CONF);
-  ESP_LOGI(TAG, "Update: Config register = 0x%04X", conf);
+  // Reapply config in case sensor resets itself
+  uint16_t config = (0b010 << 4);  // IT = 200ms
+  config &= ~(1 << 0);             // SD = 0
+  this->write_u16_(REG_CONF, config);
+  delay(20);
 
-  delay(150);  // allow for integration period
+  uint16_t conf = this->read_u16_(REG_CONF);
+  ESP_LOGD(TAG, "CONF reg during update: 0x%04X", conf);
+
+  delay(220);  // Allow full integration
 
   uint16_t uva = read_u16_(REG_UVA);
   uint16_t uvb = read_u16_(REG_UVB);
   uint16_t uvcomp1 = read_u16_(REG_UVCOMP1);
   uint16_t uvcomp2 = read_u16_(REG_UVCOMP2);
 
-  ESP_LOGD(TAG, "Raw UVA: %u", uva);
-  ESP_LOGD(TAG, "Raw UVB: %u", uvb);
-  ESP_LOGD(TAG, "UVCOMP1: %u", uvcomp1);
-  ESP_LOGD(TAG, "UVCOMP2: %u", uvcomp2);
+  ESP_LOGD(TAG, "UVA: %u  UVB: %u  C1: %u  C2: %u", uva, uvb, uvcomp1, uvcomp2);
 
   float comp_uva = get_comp_uva_(uva, uvcomp1, uvcomp2);
   float comp_uvb = get_comp_uvb_(uvb, uvcomp1, uvcomp2);
-  ESP_LOGD(TAG, "Compensated UVA: %.2f", comp_uva);
-  ESP_LOGD(TAG, "Compensated UVB: %.2f", comp_uvb);
+
+  comp_uva = std::max(0.0f, comp_uva);
+  comp_uvb = std::max(0.0f, comp_uvb);
 
   float uvi = calculate_uvi_(comp_uva, comp_uvb);
   if (uvi < 0.0f) uvi = 0.0f;
@@ -57,19 +58,14 @@ void VEML6075Sensor::update() {
   if (uvcomp2_sensor_) uvcomp2_sensor_->publish_state(uvcomp2);
 }
 
-
 uint16_t VEML6075Sensor::read_u16_(uint8_t reg) {
   uint8_t buffer[2] = {0x00, 0x00};
-
   if (!this->read_bytes(reg, buffer, 2)) {
-    ESP_LOGE(TAG, "Failed to read register 0x%02X", reg);
+    ESP_LOGE(TAG, "Failed to read reg 0x%02X", reg);
     return 0;
   }
-
-  ESP_LOGD(TAG, "Read reg 0x%02X: [%02X %02X]", reg, buffer[0], buffer[1]);
   return (uint16_t(buffer[1]) << 8) | buffer[0];
 }
-
 
 void VEML6075Sensor::write_u16_(uint8_t reg, uint16_t value) {
   uint8_t buffer[2];
