@@ -20,18 +20,29 @@ void VEML6075Sensor::setup() {
 
 void VEML6075Sensor::configure_sensor_() {
   uint16_t config = 0x00;
+
   config |= (integration_time_ << 4);  // bits 6:4 = IT
+
   if (mode_ == MODE_FORCED) {
-    config |= (1 << 0);  // SD = 1 (shut down until triggered)
+    config |= (1 << 13);  // UV_TRIG to start
+    config |= (1 << 0);   // SD = 1 to shut down (force mode requires shutdown + trigger)
+  } else {
+    config &= ~(1 << 0);  // SD = 0, always on
   }
+
   this->write_u16_(REG_CONF, config);
 }
 
 void VEML6075Sensor::update() {
-  if (mode_ == MODE_FORCED) {
-    this->write_u16_(REG_CONF, (integration_time_ << 4));  // trigger
-    delay(120);  // wait for integration
-  }
+if (mode_ == MODE_FORCED) {
+  uint16_t config = 0x00;
+  config |= (integration_time_ << 4);
+  config |= (1 << 13);  // UV_TRIG
+  config |= (1 << 0);   // SD = 1
+
+  this->write_u16_(REG_CONF, config);
+  delay(120);  // give it time to measure
+}
 
   uint16_t uva = read_u16_(REG_UVA);
   uint16_t uvb = read_u16_(REG_UVB);
