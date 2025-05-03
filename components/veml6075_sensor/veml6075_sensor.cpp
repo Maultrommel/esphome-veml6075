@@ -19,6 +19,11 @@ void VEML6075Sensor::setup() {
   this->write_u16_(REG_CONF, config);
   delay(100);  // wait for sensor to wake
 
+  for (uint8_t reg = 0x00; reg <= 0x0B; reg++) {
+  uint16_t val = this->read_u16_(reg);
+  ESP_LOGI(TAG, "Reg 0x%02X: 0x%04X", reg, val);
+}
+
   // Read back config for confirmation
   uint16_t readback = this->read_u16_(REG_CONF);
   ESP_LOGI(TAG, "Config register readback: 0x%04X", readback);
