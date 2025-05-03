@@ -6,6 +6,26 @@ namespace veml6075_sensor {
 
 static const char *const TAG = "veml6075";
 
+const float HD_SCALAR = 2.0f;
+const float UVA_RESP_100MS = 0.001111;  // uncovered, from Vishay/SparkFun
+const float UVB_RESP_100MS = 0.00125;
+
+const float UVA_RESPONSIVITY[] = {
+  UVA_RESP_100MS / 0.5016286645f,  // 50ms
+  UVA_RESP_100MS,                 // 100ms
+  UVA_RESP_100MS / 2.039087948f,  // 200ms
+  UVA_RESP_100MS / 3.781758958f,  // 400ms
+  UVA_RESP_100MS / 7.371335505f   // 800ms
+};
+
+const float UVB_RESPONSIVITY[] = {
+  UVB_RESP_100MS / 0.5016286645f,
+  UVB_RESP_100MS,
+  UVB_RESP_100MS / 2.039087948f,
+  UVB_RESP_100MS / 3.781758958f,
+  UVB_RESP_100MS / 7.371335505f
+};
+
 #define REG_CONF    0x00
 #define REG_UVA     0x07
 #define REG_UVB     0x09
@@ -84,13 +104,19 @@ void VEML6075Sensor::update() {
 
   float comp_uva = get_comp_uva_(uva, uvcomp1, uvcomp2);
   float comp_uvb = get_comp_uvb_(uvb, uvcomp1, uvcomp2);
+  
+  if (high_dynamic_) {
+    comp_uva /= HD_SCALAR;
+    comp_uvb /= HD_SCALAR;
+  }
+
 
   comp_uva = std::max(0.0f, comp_uva);
   comp_uvb = std::max(0.0f, comp_uvb);
-
-  float uvi = calculate_uvi_(comp_uva, comp_uvb);
-  if (uvi < 0.0f) uvi = 0.0f;
-
+  
+  float uvi = (comp_uva * UVA_RESPONSIVITY[integration_time_] +
+             comp_uvb * UVB_RESPONSIVITY[integration_time_]) / 2.0f;
+  
   if (uv_index_sensor_) uv_index_sensor_->publish_state(uvi);
   if (uva_sensor_) uva_sensor_->publish_state(uva);
   if (uvb_sensor_) uvb_sensor_->publish_state(uvb);
