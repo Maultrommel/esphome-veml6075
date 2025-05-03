@@ -55,13 +55,23 @@ void VEML6075Sensor::update() {
 
 uint16_t VEML6075Sensor::read_u16_(uint8_t reg) {
   uint8_t buffer[2] = {0x00, 0x00};
-  if (!this->read_bytes(reg, buffer, 2)) {
+
+  // First write the register address
+  if (!this->write(reinterpret_cast<const uint8_t *>(&reg), 1)) {
+    ESP_LOGE(TAG, "Failed to write register address 0x%02X", reg);
+    return 0;
+  }
+
+  // Then read two bytes from that register
+  if (!this->read(buffer, 2)) {
     ESP_LOGE(TAG, "Failed to read register 0x%02X", reg);
     return 0;
   }
+
   ESP_LOGD(TAG, "Read reg 0x%02X: [%02X %02X]", reg, buffer[0], buffer[1]);
   return (uint16_t(buffer[1]) << 8) | buffer[0];
 }
+
 
 void VEML6075Sensor::write_u16_(uint8_t reg, uint16_t value) {
   uint8_t buffer[2];
