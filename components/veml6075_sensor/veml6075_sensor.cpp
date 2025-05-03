@@ -15,7 +15,9 @@ static const char *const TAG = "veml6075";
 #define REG_UVCOMP2 0x0B
 
 void VEML6075Sensor::setup() {
-  configure_sensor_();
+  uint16_t config = (0b010 << 4);  // IT = 100ms, sensor enabled
+  this->write_u16_(REG_CONF, config);
+  delay(20);  // give sensor time to wake up
 }
 
 void VEML6075Sensor::configure_sensor_() {
