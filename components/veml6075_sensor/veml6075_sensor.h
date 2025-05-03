@@ -24,6 +24,8 @@ class VEML6075Sensor : public PollingComponent, public i2c::I2CDevice {
  public:
   void set_integration_time(VEML6075IntegrationTime time) { integration_time_ = time; }
   void set_mode(VEML6075Mode mode) { mode_ = mode; }
+  void set_shutdown(bool shutdown) { shutdown_ = shutdown; }
+  void set_high_dynamic(bool high_dynamic) { high_dynamic_ = high_dynamic; }
 
   void set_uv_index_sensor(sensor::Sensor *s) { uv_index_sensor_ = s; }
   void set_uva_sensor(sensor::Sensor *s) { uva_sensor_ = s; }
@@ -44,6 +46,8 @@ class VEML6075Sensor : public PollingComponent, public i2c::I2CDevice {
 
   VEML6075IntegrationTime integration_time_ = IT_100MS;
   VEML6075Mode mode_ = MODE_ACTIVE;
+  bool shutdown_{false};
+  bool high_dynamic_{false};
 
   sensor::Sensor *uv_index_sensor_{nullptr};
   sensor::Sensor *uva_sensor_{nullptr};
