@@ -13,8 +13,9 @@ CODEOWNERS = ["@Maultrommel"]
 DEPENDENCIES = ["i2c"]
 
 veml6075_sensor_ns = cg.esphome_ns.namespace("veml6075_sensor")
-VEML6075SensorComponent = veml6075_sensor_ns.class_(
-    "VEML6075SensorComponent", cg.Component, i2c.I2CDevice
+
+VEML6075Sensor = veml6075_sensor_ns.class_(
+    "VEML6075Sensor", cg.PollingComponent, i2c.I2CDevice
 )
 
 CONF_UV_INDEX = "uv_index"
