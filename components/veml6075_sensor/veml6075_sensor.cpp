@@ -79,7 +79,9 @@ uint16_t VEML6075Sensor::read_u16_(uint8_t reg) {
 }
 
 void VEML6075Sensor::write_u16_(uint8_t reg, uint16_t value) {
-  uint8_t buffer[2] = {uint8_t(value & 0xFF), uint8_t((value >> 8) & 0xFF)};
+  uint8_t buffer[2];
+  buffer[0] = value & 0xFF;        // LSB
+  buffer[1] = (value >> 8) & 0xFF; // MSB
   this->write_bytes(reg, buffer, 2);
 }
 
