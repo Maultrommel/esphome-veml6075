@@ -69,59 +69,56 @@ void VEML6075Sensor::setup() {
 }
 
 void VEML6075Sensor::update() {
-  // Always reapply config to keep sensor alive and clean
-  uint16_t config = 0x00;
+  // Avoid re-reading too fast
+  const unsigned long now = millis();
+  if ((now - last_read_time_) < 1000) {
+    ESP_LOGD(TAG, "Skipping update (read too soon)");
+    return;
+  }
+  last_read_time_ = now;
 
-  config |= ((integration_time_ << VEML6075_UV_IT_SHIFT) & VEML6075_UV_IT_MASK);
-
-  if (high_dynamic_)
-    config |= VEML6075_HD_MASK;
+  // Trigger a forced measurement (if in forced mode)
+  uint16_t config = (integration_time_ << VEML6075_UV_IT_SHIFT) & VEML6075_UV_IT_MASK;
+  if (high_dynamic_) config |= VEML6075_HD_MASK;
 
   if (mode_ == MODE_FORCED) {
-    config |= VEML6075_AF_MASK;
-    config |= VEML6075_TRIG_MASK;
-    config |= VEML6075_SHUTDOWN_MASK;
-  } else {
-    if (shutdown_)
-      config |= VEML6075_SHUTDOWN_MASK;
+    config |= VEML6075_AF_MASK | VEML6075_TRIG_MASK | VEML6075_SHUTDOWN_MASK;
+    this->write_u16_(REG_CONF, config);
+    delay(150);  // Wait for integration
   }
 
-  this->write_u16_(REG_CONF, config);
-  delay(20);
+  // Read all raw values
+  const uint16_t uva = read_u16_(REG_UVA);
+  const uint16_t uvb = read_u16_(REG_UVB);
+  const uint16_t uvcomp1 = read_u16_(REG_UVCOMP1);
+  const uint16_t uvcomp2 = read_u16_(REG_UVCOMP2);
 
-  uint16_t conf = this->read_u16_(REG_CONF);
-  ESP_LOGD(TAG, "CONF reg during update: 0x%04X", conf);
+  // Compensate UVA and UVB
+  float comp_uva = static_cast<float>(uva) - (uva_a_coef * uvcomp1) - (uva_b_coef * uvcomp2);
+  float comp_uvb = static_cast<float>(uvb) - (uvb_c_coef * uvcomp1) - (uvb_d_coef * uvcomp2);
 
-  delay(220);  // Integration delay
-
-  // Read all UV data
-  uint16_t uva = read_u16_(REG_UVA);
-  uint16_t uvb = read_u16_(REG_UVB);
-  uint16_t uvcomp1 = read_u16_(REG_UVCOMP1);
-  uint16_t uvcomp2 = read_u16_(REG_UVCOMP2);
-
-  ESP_LOGD(TAG, "UVA: %u  UVB: %u  C1: %u  C2: %u", uva, uvb, uvcomp1, uvcomp2);
-
-  float comp_uva = get_comp_uva_(uva, uvcomp1, uvcomp2);
-  float comp_uvb = get_comp_uvb_(uvb, uvcomp1, uvcomp2);
-  
   if (high_dynamic_) {
     comp_uva /= HD_SCALAR;
     comp_uvb /= HD_SCALAR;
   }
 
-
-  comp_uva = std::max(0.0f, comp_uva);
-  comp_uvb = std::max(0.0f, comp_uvb);
-  
+  // Use SparkFun's index method
   float uvi = (comp_uva * UVA_RESPONSIVITY[integration_time_] +
-             comp_uvb * UVB_RESPONSIVITY[integration_time_]) / 2.0f;
-  
-  if (uv_index_sensor_) uv_index_sensor_->publish_state(uvi);
+               comp_uvb * UVB_RESPONSIVITY[integration_time_]) / 2.0f;
+
+  // Clamp values
+  last_uva_ = std::max(0.0f, comp_uva);
+  last_uvb_ = std::max(0.0f, comp_uvb);
+  last_index_ = std::max(0.0f, uvi);
+
+  // Publish
   if (uva_sensor_) uva_sensor_->publish_state(uva);
   if (uvb_sensor_) uvb_sensor_->publish_state(uvb);
   if (uvcomp1_sensor_) uvcomp1_sensor_->publish_state(uvcomp1);
   if (uvcomp2_sensor_) uvcomp2_sensor_->publish_state(uvcomp2);
+  if (uv_index_sensor_) uv_index_sensor_->publish_state(last_index_);
+
+  ESP_LOGD(TAG, "UVA: %.2f  UVB: %.2f  UVI: %.3f", last_uva_, last_uvb_, last_index_);
 }
 
 uint16_t VEML6075Sensor::read_u16_(uint8_t reg) {
